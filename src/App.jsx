@@ -1,107 +1,182 @@
-import { useEffect, useState } from 'react'
-import './App.css'
+import { useEffect, useState } from "react";
+import Swal from "sweetalert2";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "./App.css";
 
 function App() {
-  let [weath, setWeath] = useState('')
-  let [direction, setDirection]=useState('')
-  let [srch,setSrch]=useState('')
-  let [city,setCity]=useState('Karachi')
-  let [sunRiseTime,setSunRiseTime]=useState('')
-  let [sunSetTime,setSunSetTime]=useState('')
-  useEffect(()=>{
-    fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=aa9978b91d5b6560db0ffa88c6696e01&units=metric`).then((data)=>data.json()).then((data)=>{
-    let n=new Date()
-    n.setTime(data.sys.sunrise*1000)
-    switch(true){
-      case (n.getHours()==0):
-        setSunRiseTime(`12:${n.getMinutes()<10?('0'+n.getMinutes()):n.getMinutes()} AM`)
-        break
-        case (n.getHours()>0 && n.getHours()<=11):
-          setSunRiseTime(`${n.getHours()}:${n.getMinutes()<10?('0'+n.getMinutes()):n.getMinutes()} AM`)
-          break
-          case (n.getHours()>=12 && n.getHours()<=23):
-            setSunRiseTime(n.getHours()==12?(`12:${n.getMinutes()<10?('0'+n.getMinutes()):n.getMinutes()} PM`):(`${n.getHours()-12}:${n.getMinutes()<10?('0'+n.getMinutes()):n.getMinutes()} PM`))
-            break
-    }
-    let m=new Date()
-    m.setTime(data.sys.sunset*1000)
-    switch(true){
-      case (m.getHours()==0):
-        setSunSetTime(`12:${m.getMinutes()<10?('0'+m.getMinutes()):m.getMinutes()} AM`)
-        break
-        case (m.getHours()>0 && m.getHours()<=11):
-          setSunSetTime(`${m.getHours()}:${m.getMinutes()<10?('0'+m.getMinutes()):m.getMinutes()} AM`)
-          break
-          case (m.getHours()>=12 && m.getHours()<=23):
-            setSunSetTime(m.getHours()==12?(`12:${m.getMinutes()<10?('0'+m.getMinutes()):m.getMinutes()} PM`):(`${m.getHours()-12}:${m.getMinutes()<10?('0'+m.getMinutes()):m.getMinutes()} PM`))
-            break
-    }
-    switch(true){
-      case (data.wind.deg>=0 && data.wind.deg<22.5 || data.wind.deg>337.5 && data.wind.deg<=360):
-        setDirection('North')
-        break
-        case (data.wind.deg>22.5 && data.wind.deg<67.5):
-          setDirection('Northeast')
-          break
-          case (data.wind.deg>67.5 && data.wind.deg<112.5):
-            setDirection('East')
-            break
-            case (data.wind.deg>112.5 && data.wind.deg<157.5):
-              setDirection('Southeast')
-              break
-              case (data.wind.deg>157.5 && data.wind.deg<202.5):
-                setDirection('South')
-                break
-                case (data.wind.deg>202.5 && data.wind.deg<247.5):
-                  setDirection('Southwest')
-                  break
-                  case (data.wind.deg>247.5 && data.wind.deg<292.5):
-                    setDirection('West')
-                    break
-                    default:
-                      setDirection('Northwest')
-    }
-    setWeath(data)
-  }).catch(()=>{
-    alert('Not Found')
-  })
-  },[city])
-  if(weath==''){
-    return '...Loading'
+  let [weath, setWeath] = useState("");
+  let [direction, setDirection] = useState("");
+  let [srch, setSrch] = useState("");
+  let [city, setCity] = useState("Karachi");
+  let [sunRiseTime, setSunRiseTime] = useState("");
+  let [sunSetTime, setSunSetTime] = useState("");
+  let [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch(
+      `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=aa9978b91d5b6560db0ffa88c6696e01&units=metric`
+    )
+      .then((data) => data.json())
+      .then((data) => {
+        if (data.cod !== 200) {
+          Swal.fire({
+            icon: "error",
+            title: "Oops...",
+            text: "City not found!",
+          });
+          setLoading(false);
+          return;
+        }
+
+        // Sunrise
+        let n = new Date(data.sys.sunrise * 1000);
+        setSunRiseTime(
+          n.toLocaleTimeString("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
+          })
+        );
+
+        // Sunset
+        let m = new Date(data.sys.sunset * 1000);
+        setSunSetTime(
+          m.toLocaleTimeString("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
+          })
+        );
+
+        // Wind direction
+        switch (true) {
+          case (data.wind.deg >= 0 && data.wind.deg < 22.5) ||
+            (data.wind.deg > 337.5 && data.wind.deg <= 360):
+            setDirection("North");
+            break;
+          case data.wind.deg > 22.5 && data.wind.deg < 67.5:
+            setDirection("Northeast");
+            break;
+          case data.wind.deg > 67.5 && data.wind.deg < 112.5:
+            setDirection("East");
+            break;
+          case data.wind.deg > 112.5 && data.wind.deg < 157.5:
+            setDirection("Southeast");
+            break;
+          case data.wind.deg > 157.5 && data.wind.deg < 202.5:
+            setDirection("South");
+            break;
+          case data.wind.deg > 202.5 && data.wind.deg < 247.5:
+            setDirection("Southwest");
+            break;
+          case data.wind.deg > 247.5 && data.wind.deg < 292.5:
+            setDirection("West");
+            break;
+          default:
+            setDirection("Northwest");
+        }
+
+        setWeath(data);
+        setLoading(false);
+      })
+      .catch(() => {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Something went wrong!",
+        });
+        setLoading(false);
+      });
+  }, [city]);
+
+  if (loading) {
+    return (
+      // <div className="d-flex justify-content-center align-items-center vh-100">
+      //   <img src="/loader.gif" alt="Loading..." width="120" />
+      // </div>
+      <div>
+        <div className="spinner-grow text-primary" role="status">
+  <span className="visually-hidden">Loading...</span>
+</div>
+<div className="spinner-grow text-secondary" role="status">
+  <span className="visually-hidden">Loading...</span>
+</div>
+<div className="spinner-grow text-success" role="status">
+  <span className="visually-hidden">Loading...</span>
+</div>
+<div className="spinner-grow text-danger" role="status">
+  <span className="visually-hidden">Loading...</span>
+</div>
+<div className="spinner-grow text-warning" role="status">
+  <span className="visually-hidden">Loading...</span>
+</div>
+<div className="spinner-grow text-info" role="status">
+  <span className="visually-hidden">Loading...</span>
+</div>
+<div className="spinner-grow text-light" role="status">
+  <span className="visually-hidden">Loading...</span>
+</div>
+<div className="spinner-grow text-dark" role="status">
+  <span className="visually-hidden">Loading...</span>
+</div>
+      </div>
+    );
   }
+
+  if (weath === "") {
+    return "...Loading";
+  }
+
   return (
-    <div>
-      <input type="text" value={srch} placeholder='Search by name' onChange={(e)=>{
-        setSrch(e.target.value)
-      }} />
-      <button disabled={srch==''} onClick={()=>setCity(srch)}>Search</button>
-      <p>Your looking {weath.name} weather. Temperature is {weath.main.temp} C. Feels like temperature is {weath.main.feels_like} C. Maximum temperature is {weath.main.temp_max} C. Minimum temperature is {weath.main.temp_min} C. Pressure is {weath.main.pressure} hPa. Humidity is {weath.main.humidity} %. Visisbility is {weath.visibility/1000} km. Weather : {weath.weather[0].main}. Wind speed is {weath.wind.speed} m/s. Wind gust is {weath.wind.gust} m/s. Wind direction is {direction}. Sunrise at {sunRiseTime} & sunset at {sunSetTime}.</p>
+    <div className="container py-5">
+      <h1>Open Weather</h1>
+      {/* Search Bar */}
+      <div className="d-flex mb-4">
+        <input
+          type="text"
+          className="form-control me-2"
+          value={srch}
+          placeholder="Search by city"
+          onChange={(e) => {
+            setSrch(e.target.value);
+          }}
+        />
+        <button
+          className="btn btn-primary"
+          disabled={srch === ""}
+          onClick={() => setCity(srch)}
+        >
+          Search
+        </button>
+      </div>
+
+      {/* Weather Card */}
+      <div className="card shadow-lg border-0">
+        <div className="card-body text-center">
+          <h2 className="card-title mb-3">{weath.name} Weather</h2>
+          <h4 className="mb-3">
+            {weath.weather[0].main} ({weath.weather[0].description})
+          </h4>
+          <h1 className="display-4 fw-bold mb-3">
+            {weath.main.temp}°C
+          </h1>
+          <p className="mb-1">
+            Feels like: {weath.main.feels_like}°C | Max:{" "}
+            {weath.main.temp_max}°C | Min: {weath.main.temp_min}°C
+          </p>
+          <p className="mb-1">Humidity: {weath.main.humidity}%</p>
+          <p className="mb-1">Pressure: {weath.main.pressure} hPa</p>
+          <p className="mb-1">Visibility: {weath.visibility / 1000} km</p>
+          <p className="mb-1">
+            Wind: {weath.wind.speed} m/s {direction}{" "}
+            {weath.wind.gust ? `(gusts: ${weath.wind.gust} m/s)` : ""}
+          </p>
+          <p className="mb-1">
+            🌅 Sunrise: {sunRiseTime} | 🌇 Sunset: {sunSetTime}
+          </p>
+        </div>
+      </div>
     </div>
-  )
+  );
 }
 
-export default App
-// data.main.temp
-    // data.main.temp_max
-    // data.main.temp_min
-    // data.main.feels_like
-    // data.main.pressure
-    // data.main.temp
-    // data.main.humidity
-    // data.name
-    // data.sys.sunrise
-    // data.sys.sunset
-    // data.timezone
-    // data.visibility
-    // data.weather[0].main
-    // data.wind.speed
-    // data.wind.gust
-    // data.wind.deg
-    // 0 is N
-    // 45 is NE
-    // 90 is E
-    // 135 is SE
-    // 180 is S
-    // 225 is SW
-    // 270 is W
-    // 315 is NW
+export default App;
